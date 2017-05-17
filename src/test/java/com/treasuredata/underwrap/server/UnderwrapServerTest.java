@@ -115,6 +115,9 @@ public class UnderwrapServerTest
             Response response = future.get(6, TimeUnit.SECONDS);
             assertThat(response.getStatus(), is(204));
         }
+        catch (Throwable e) {
+            e.printStackTrace();
+        }
         finally {
             executorService.shutdownNow();
         }
