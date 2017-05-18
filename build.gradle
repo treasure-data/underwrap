@@ -1,30 +1,56 @@
-apply plugin: 'java'
-apply plugin: 'maven'
-apply plugin: "findbugs"
-apply plugin: 'jacoco'
-apply plugin: 'com.github.kt3k.coveralls'
-apply plugin: 'com.github.johnrengelman.shadow'
-
-group 'com.treasuredata'
-version '1.0-SNAPSHOT'
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
 buildscript {
     repositories {
         mavenCentral()
         jcenter()
     }
-
-    dependencies {
-        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.8.1'
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
-    }
 }
+
+plugins {
+    id 'com.github.johnrengelman.shadow' version '1.2.3'
+    id 'com.jfrog.artifactory' version '4.4.17'
+    id "com.github.kt3k.coveralls" version "2.8.1"
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: "findbugs"
+apply plugin: 'jacoco'
+apply plugin: 'com.github.kt3k.coveralls'
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'com.jfrog.artifactory'
+
+group 'com.treasuredata'
+
+// Build version
+String baseVersion = '0.1.0'
+if (project.hasProperty('gitVersion')) {
+    def git = ["/bin/sh", "-c", "git show ${project.gitVersion} --pretty=format:%ad-%H --date format:%Y%m%dT%H%M%S | head -n 1"].execute()
+    if (git.waitFor() != 0) {
+        throw new GradleException("Failed to retrieve git version (exit code " + git.exitValue() + "): " + git.text.trim())
+    }
+    version = "${baseVersion}-${git.text.trim()}"
+}
+else {
+    version = "${baseVersion}-local"
+}
+if (project.hasProperty('release') && project.property('release').equals('true')) {
+    // Nothing to do
+}
+else {
+    version += "-SNAPSHOT"
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
 
 repositories {
     mavenCentral()
+    jcenter()
 }
 
 findbugs {
@@ -46,14 +72,17 @@ tasks.withType(FindBugs) {
     }
 }
 
-task javadocJar(type: Jar) {
-    classifier = 'javadoc'
-    from javadoc
+task testsJar(type: Jar, dependsOn: classes) {
+    classifier = 'tests'
+    from sourceSets.test.output
 }
-
-task sourcesJar(type: Jar) {
+task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
     from sourceSets.main.allSource
+}
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
 }
 
 dependencies {
@@ -66,3 +95,37 @@ dependencies {
     compile 'org.jboss.resteasy:resteasy-undertow:3.1.2.Final'
     compile 'io.undertow:undertow-servlet:1.4.0.Final'
 }
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            version version
+
+            artifact sourcesJar
+            artifact testsJar
+            artifact javadocJar
+        }
+        shadow(MavenPublication) {
+            from components.shadow
+            version version
+        }
+    }
+}
+
+artifactoryPublish {
+    publications('mavenJava')
+}
+
+String repo = version.endsWith('SNAPSHOT') ? 'libs-snapshot-local' : 'libs-release-local'
+artifactory {
+    contextUrl = 'https://treasuredata.artifactoryonline.com/treasuredata'
+    publish {
+        repository {
+            repoKey = repo
+            username = "${System.env.TD_ARTIFACTORY_USERNAME}"
+            password = "${System.env.TD_ARTIFACTORY_PASSWORD}"
+        }
+    }
+}
+
