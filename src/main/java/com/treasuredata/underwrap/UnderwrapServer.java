@@ -1,6 +1,5 @@
-package com.treasuredata.underwrap.server;
+package com.treasuredata.underwrap;
 
-import com.google.common.annotations.VisibleForTesting;
 import io.undertow.Undertow;
 import io.undertow.server.handlers.GracefulShutdownHandler;
 import io.undertow.server.handlers.PathHandler;
@@ -19,7 +18,9 @@ import javax.servlet.ServletException;
 import javax.ws.rs.core.Application;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -31,23 +32,51 @@ public class UnderwrapServer
     private static final Logger LOG = LoggerFactory.getLogger(UnderwrapServer.class);
     private final Class<? extends Application> applicationClass;
     private final Path serverRootPath;
+
+    private String accessLogFormat;
+    private Path accessLogPath;
+
     private Undertow undertow;
     private DeploymentManager deploymentManager;
     private GracefulShutdownHandler gracefulShutdownHandler;
 
     @FunctionalInterface
+    public interface DeploymentBuild
+    {
+        void build(DeploymentInfo deploymentInfo);
+    }
+
+    @FunctionalInterface
     public interface ServerBuild
     {
-        void build(Undertow.Builder serverBuilder);
+        void build(Undertow.Builder undertowBuilder);
+    }
+
+    public UnderwrapServer(Class<? extends UnderwrapApplication> applicationClass)
+    {
+        this(applicationClass, null);
     }
 
     public UnderwrapServer(Class<? extends UnderwrapApplication> applicationClass, Path serverRootPath)
     {
         this.applicationClass = applicationClass;
+        if (serverRootPath == null) {
+            serverRootPath = Paths.get(System.getProperty("user.dir"));
+        }
         this.serverRootPath = serverRootPath;
     }
 
-    private void deploy(Map<Class, Object> contextMap)
+    public void setAccessLogFormat(String accessLogFormat)
+    {
+        this.accessLogFormat = accessLogFormat;
+    }
+
+    public void setAccessLogPath(Path accessLogPath)
+    {
+        this.accessLogPath = accessLogPath;
+    }
+
+    private void deploy(Map<Class, Object> contextMap, DeploymentBuild deploymentBuild)
     {
         // Construct deployment information
         ResteasyDeployment resteasyDeployment = new ResteasyDeployment();
@@ -60,8 +89,22 @@ public class UnderwrapServer
                                 .setLoadOnStartup(1)
                                 .addMapping("/*")
             );
-        di.setClassLoader(applicationClass.getClassLoader());
-        di.setContextPath("").setDeploymentName("bigdam-dddb");
+
+        // Delegate a build of DeployInfo to `deploymentBuild`
+        if (deploymentBuild != null) {
+            deploymentBuild.build(di);
+        }
+
+        // Take care of some mandatory attributes
+        if (di.getDeploymentName() == null) {
+            di.setDeploymentName("UnderWrap");
+        }
+        if (di.getClassLoader() == null) {
+            di.setClassLoader(applicationClass.getClassLoader());
+        }
+        if (di.getContextPath() == null) {
+            di.setContextPath("");
+        }
 
         // Start a deployment manager. This manager is responsible for controlling the lifecycle of a servlet deployment.
         // Finally, a root handler is build.
@@ -78,29 +121,33 @@ public class UnderwrapServer
         }
 
         // TODO: Make it enable to set custom format and access log path
-        gracefulShutdownHandler = new GracefulShutdownHandler(new AccessLogHandlerFactory(applicationClass, serverRootPath, null).create(pathHandler));
+        gracefulShutdownHandler = new GracefulShutdownHandler(new AccessLogHandlerFactory(applicationClass, serverRootPath, accessLogPath, accessLogFormat).create(pathHandler));
 
         // Set instances we want to pass via @Context annotation
-        for (Map.Entry<Class, Object> contextTuple : contextMap.entrySet()) {
-            resteasyDeployment.getDispatcher().getDefaultContextObjects().put(contextTuple.getKey(), contextTuple.getValue());
+        if (contextMap != null) {
+            for (Map.Entry<Class, Object> contextTuple : contextMap.entrySet()) {
+                resteasyDeployment.getDispatcher().getDefaultContextObjects().put(contextTuple.getKey(), contextTuple.getValue());
+            }
         }
     }
 
-    private void buildAndStartServer(ServerBuild builder)
+    private void buildAndStartServer(ServerBuild serverBuild)
     {
         // Configure Undertow server and start it with the root handler
         Undertow.Builder serverBuilder = Undertow.builder();
 
-        builder.build(serverBuilder);
+        if (serverBuild != null) {
+            serverBuild.build(serverBuilder);
+        }
 
         undertow = serverBuilder.setHandler(gracefulShutdownHandler).build();
         undertow.start();
     }
 
-    public void start(Map<Class, Object> contextMap, ServerBuild builder)
+    public void start(Map<Class, Object> contextMap, DeploymentBuild deploymentBuild, ServerBuild serverBuild)
     {
-        deploy(contextMap);
-        buildAndStartServer(builder);
+        deploy(contextMap, deploymentBuild);
+        buildAndStartServer(serverBuild);
     }
 
     private void shutdownGracefulShutdownHandler()
@@ -164,10 +211,9 @@ public class UnderwrapServer
         undertow.stop();
     }
 
-    @VisibleForTesting
-    Undertow getUndertow()
+    public List<Undertow.ListenerInfo> getListenerInfo()
     {
-        return undertow;
+        return undertow.getListenerInfo();
     }
 
     public static class UnderwrapApplication
@@ -176,7 +222,7 @@ public class UnderwrapServer
         @Override
         public Set<Class<?>> getClasses()
         {
-            HashSet<Class<?>> classes = new HashSet<>();
+            Set<Class<?>> classes = new HashSet<>();
 
             registerResources(classes);
             registerMessageBodyProviders(classes);
@@ -185,15 +231,15 @@ public class UnderwrapServer
             return classes;
         }
 
-        protected void registerExceptionHandlers(HashSet<Class<?>> classes)
+        protected void registerExceptionHandlers(Set<Class<?>> classes)
         {
         }
 
-        protected void registerMessageBodyProviders(HashSet<Class<?>> classes)
+        protected void registerMessageBodyProviders(Set<Class<?>> classes)
         {
         }
 
-        protected void registerResources(HashSet<Class<?>> classes)
+        protected void registerResources(Set<Class<?>> classes)
         {
         }
     }

@@ -1,4 +1,4 @@
-package com.treasuredata.underwrap.server;
+package com.treasuredata.underwrap;
 
 import io.undertow.Undertow;
 import org.junit.After;
@@ -11,13 +11,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 
 import java.net.InetSocketAddress;
-import java.nio.file.Paths;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -52,7 +49,7 @@ public class UnderwrapServerTest
         extends UnderwrapServer.UnderwrapApplication
     {
         @Override
-        protected void registerResources(HashSet<Class<?>> classes)
+        protected void registerResources(Set<Class<?>> classes)
         {
             classes.add(TestResource.class);
         }
@@ -62,10 +59,10 @@ public class UnderwrapServerTest
     public void setUp()
     {
         // Start UnderwrapServer
-        server = new UnderwrapServer(TestApplication.class, Paths.get(System.getProperty("user.dir")));
-        server.start(Collections.emptyMap(), sb -> sb.addHttpListener(0, "0.0.0.0"));
+        server = new UnderwrapServer(TestApplication.class);
+        server.start(Collections.emptyMap(), null, sb -> sb.addHttpListener(0, "0.0.0.0"));
 
-        List<Undertow.ListenerInfo> listenerInfo = server.getUndertow().getListenerInfo();
+        List<Undertow.ListenerInfo> listenerInfo = server.getListenerInfo();
         assertThat(listenerInfo.size(), is(1));
 
         InetSocketAddress address = (InetSocketAddress) listenerInfo.get(0).getAddress();

@@ -1,4 +1,4 @@
-package com.treasuredata.underwrap.server;
+package com.treasuredata.underwrap;
 
 import org.junit.Test;
 
