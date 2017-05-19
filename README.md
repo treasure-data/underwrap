@@ -4,26 +4,26 @@ A very thin wrapper of Undertow and Resteasy
 
 ## Usage
 
-### ~/.m2/settings.xml
+### Maven
+
+#### ~/.m2/settings.xml
 
 ```xml
 <settings>
-    <servers>
-        <server>
-            <id>treasuredata-releases</id>
-            <username>(Set your TD_ARTIFACTORY_USERNAME)</username>
-            <password>(Set your TD_ARTIFACTORY_PASSWORD)</password>
-        </server>
-        <server>
-            <id>treasuredata-snapshots</id>
-            <username>(Set your TD_ARTIFACTORY_USERNAME)</username>
-            <password>(Set your TD_ARTIFACTORY_PASSWORD)</password>
-        </server>
-    </servers>
+    <server>
+        <id>treasuredata-releases</id>
+        <username>${env.TD_ARTIFACTORY_USERNAME}</username>
+        <password>${env.TD_ARTIFACTORY_PASSWORD}</password>
+    </server>
+    <server>
+        <id>treasuredata-snapshots</id>
+        <username>${env.TD_ARTIFACTORY_USERNAME}</username>
+        <password>${env.TD_ARTIFACTORY_PASSWORD}</password>
+    </server>
 </settings>
 ```
 
-### Maven
+#### pom.xml
 
 ```xml
 <repositories>
@@ -50,20 +50,25 @@ A very thin wrapper of Undertow and Resteasy
 
 ### Gradle
 
+#### build.gradle
+
 ```groovy
-repositories {
-    maven {
-        url "https://treasuredata.artifactoryonline.com/treasuredata/libs-release"
-        credentials {
-            username = "${System.env.TD_ARTIFACTORY_USERNAME}"
-            password = "${System.env.TD_ARTIFACTORY_PASSWORD}"
+apply plugin: 'com.jfrog.artifactory'
+
+artifactory {
+    resolve {
+        contextUrl = 'https://treasuredata.artifactoryonline.com/treasuredata'
+        repository {
+            repoKey = 'libs-release'
+            username = "$System.env.TD_ARTIFACTORY_USERNAME"
+            password = "$System.env.TD_ARTIFACTORY_PASSWORD"
+            maven = true
         }
-    }
-    maven {
-        url "https://treasuredata.artifactoryonline.com/treasuredata/libs-snapshot"
-        credentials {
-            username = "${System.env.TD_ARTIFACTORY_USERNAME}"
-            password = "${System.env.TD_ARTIFACTORY_PASSWORD}"
+        repository {
+            repoKey = 'libs-snapshot'
+            username = "$System.env.TD_ARTIFACTORY_USERNAME"
+            password = "$System.env.TD_ARTIFACTORY_PASSWORD"
+            maven = true
         }
     }
 }
