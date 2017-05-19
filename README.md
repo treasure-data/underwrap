@@ -6,7 +6,7 @@ A very thin wrapper of Undertow and Resteasy
 
 ### ~/.m2/settings.xml
 
-```
+```xml
 <settings>
     <servers>
         <server>
@@ -25,8 +25,9 @@ A very thin wrapper of Undertow and Resteasy
 
 ### Maven
 
-```
+```xml
 <repositories>
+    <repository>
         <id>treasuredata-releases</id>
         <name>treasuredata-releases</name>
         <url>https://treasuredata.artifactoryonline.com/treasuredata/libs-release</url>
@@ -49,7 +50,7 @@ A very thin wrapper of Undertow and Resteasy
 
 ### Gradle
 
-```
+```groovy
 repositories {
     maven {
         url "https://treasuredata.artifactoryonline.com/treasuredata/libs-release"
@@ -74,7 +75,7 @@ dependencies {
 
 ## Example
 
-```
+```java
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
