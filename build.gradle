@@ -25,21 +25,11 @@ group 'com.treasuredata'
 
 // Build version
 String baseVersion = '0.1.0'
-if (project.hasProperty('gitVersion')) {
-    def git = ["/bin/sh", "-c", "git show ${project.gitVersion} --pretty=format:%ad-%H --date format:%Y%m%dT%H%M%S | head -n 1"].execute()
-    if (git.waitFor() != 0) {
-        throw new GradleException("Failed to retrieve git version (exit code " + git.exitValue() + "): " + git.text.trim())
-    }
-    version = "${baseVersion}-${git.text.trim()}"
-}
-else {
-    version = "${baseVersion}-local"
-}
 if (project.hasProperty('release') && project.property('release').equals('true')) {
-    // Nothing to do
+    version = baseVersion
 }
 else {
-    version += "-SNAPSHOT"
+    version = "${baseVersion}-SNAPSHOT"
 }
 
 sourceCompatibility = 1.8
@@ -117,7 +107,7 @@ artifactoryPublish {
     publications('mavenJava')
 }
 
-String repo = version.endsWith('SNAPSHOT') ? 'libs-snapshot-local' : 'libs-release-local'
+String repo = version.endsWith('-SNAPSHOT') ? 'libs-snapshot-local' : 'libs-release-local'
 artifactory {
     contextUrl = 'https://treasuredata.artifactoryonline.com/treasuredata'
     publish {
