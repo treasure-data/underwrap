@@ -76,7 +76,7 @@ public class UnderwrapServer
         this.accessLogPath = accessLogPath;
     }
 
-    private void deploy(Map<Class, Object> contextMap, DeploymentBuild deploymentBuild)
+    private void deploy(Map<Class<?>, Object> contextMap, DeploymentBuild deploymentBuild)
     {
         // Construct deployment information
         ResteasyDeployment resteasyDeployment = new ResteasyDeployment();
@@ -125,7 +125,7 @@ public class UnderwrapServer
 
         // Set instances we want to pass via @Context annotation
         if (contextMap != null) {
-            for (Map.Entry<Class, Object> contextTuple : contextMap.entrySet()) {
+            for (Map.Entry<Class<?>, Object> contextTuple : contextMap.entrySet()) {
                 resteasyDeployment.getDispatcher().getDefaultContextObjects().put(contextTuple.getKey(), contextTuple.getValue());
             }
         }
@@ -144,7 +144,7 @@ public class UnderwrapServer
         undertow.start();
     }
 
-    public void start(Map<Class, Object> contextMap, DeploymentBuild deploymentBuild, ServerBuild serverBuild)
+    public void start(Map<Class<?>, Object> contextMap, DeploymentBuild deploymentBuild, ServerBuild serverBuild)
     {
         deploy(contextMap, deploymentBuild);
         buildAndStartServer(serverBuild);
