@@ -34,7 +34,7 @@ public class AccessLogHandlerFactory
             accessLogPath = Paths.get("log");
         }
 
-        if (!accessLogPath.startsWith("/") && serverRootPath != null) {
+        if (serverRootPath != null) {
             accessLogPath = serverRootPath.resolve(accessLogPath).toAbsolutePath();
         }
         this.accessLogPath = accessLogPath;
