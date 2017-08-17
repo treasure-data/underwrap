@@ -40,6 +40,14 @@ public class UnderwrapServerTest
     public static class TestResource
     {
         @GET
+        @Path("/fast")
+        public void fastResponse()
+                throws InterruptedException
+        {
+            TimeUnit.NANOSECONDS.sleep(1);
+        }
+
+        @GET
         @Path("/slow")
         public void slowResponse()
                 throws InterruptedException
@@ -70,6 +78,8 @@ public class UnderwrapServerTest
 
         InetSocketAddress address = (InetSocketAddress) listenerInfo.get(0).getAddress();
         serverPort = address.getPort();
+
+        waitServer();
     }
 
     @After
@@ -77,6 +87,22 @@ public class UnderwrapServerTest
     {
         if (server != null) {
             server.stop();
+        }
+    }
+
+    private void waitServer()
+    {
+        long timeout = System.nanoTime() + 3_000_000_000L;
+        try {
+            while (System.nanoTime() < timeout) {
+                if (getSuccessfulResponse("/fast")) {
+                    break;
+                }
+                TimeUnit.MILLISECONDS.sleep(100);
+            }
+        }
+        catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -90,6 +116,12 @@ public class UnderwrapServerTest
     {
         WebTarget target = createTarget(path);
         return target.request().get();
+    }
+
+    private boolean getSuccessfulResponse(String path)
+    {
+        Response res = getHttpResponse(path);
+        return res.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL;
     }
 
     @Test
