@@ -1,0 +1,10 @@
+<FindBugsFilter>
+  <Match>
+    <Class name="com.treasuredata.underwrap.UnderwrapServer" />
+    <Bug pattern="IS2_INCONSISTENT_SYNC" />
+  </Match>
+  <Match>
+    <Class name="com.treasuredata.underwrap.AccessLogHandlerFactoryTest" />
+    <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME" />
+  </Match>
+</FindBugsFilter>
