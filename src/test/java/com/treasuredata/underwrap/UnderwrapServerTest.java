@@ -133,7 +133,10 @@ public class UnderwrapServerTest
             server2.start(
                     Collections.emptyMap(),
                     null,
-                    handler -> { counter.incrementAndGet(); return handler; },
+                    handler -> {
+                        counter.incrementAndGet();
+                        return handler;
+                    },
                     sb -> sb
                         .addHttpListener(0, "0.0.0.0")
                         .setSocketOption(Options.REUSE_ADDRESSES, true)
