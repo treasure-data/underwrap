@@ -5,6 +5,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.xnio.Options;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -61,7 +63,7 @@ public class UnderwrapServerTest
     {
         // Start UnderwrapServer
         server = new UnderwrapServer(TestApplication.class);
-        server.start(Collections.emptyMap(), null, sb -> sb.addHttpListener(0, "0.0.0.0"));
+        server.start(Collections.emptyMap(), null, sb -> sb.addHttpListener(0, "0.0.0.0").setSocketOption(Options.REUSE_ADDRESSES, true));
 
         List<Undertow.ListenerInfo> listenerInfo = server.getListenerInfo();
         assertThat(listenerInfo.size(), is(1));
@@ -100,7 +102,9 @@ public class UnderwrapServerTest
                     Collections.emptyMap(),
                     null,
                     handler -> { counter.incrementAndGet(); return handler; },
-                    sb -> sb.addHttpListener(0, "0.0.0.0")
+                    sb -> sb
+                        .addHttpListener(0, "0.0.0.0")
+                        .setSocketOption(Options.REUSE_ADDRESSES, true)
             );
             assertThat(counter.get(), is(1));
         }
