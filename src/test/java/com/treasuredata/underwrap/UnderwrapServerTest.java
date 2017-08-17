@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
@@ -87,6 +88,22 @@ public class UnderwrapServerTest
     {
         WebTarget target = createTarget(path);
         return target.request().get();
+    }
+
+    @Test
+    public void buildHandler()
+    {
+        server.stop(); // disable default server
+        server = new UnderwrapServer(TestApplication.class);
+
+        AtomicInteger counter = new AtomicInteger(0);
+        server.start(
+                Collections.emptyMap(),
+                null,
+                handler -> { counter.incrementAndGet(); return handler; },
+                sb -> sb.addHttpListener(0, "0.0.0.0")
+        );
+        assertThat(counter.get(), is(1));
     }
 
     @Test
