@@ -93,17 +93,20 @@ public class UnderwrapServerTest
     @Test
     public void buildHandler()
     {
-        server.stop(); // disable default server
-        server = new UnderwrapServer(TestApplication.class);
-
-        AtomicInteger counter = new AtomicInteger(0);
-        server.start(
-                Collections.emptyMap(),
-                null,
-                handler -> { counter.incrementAndGet(); return handler; },
-                sb -> sb.addHttpListener(0, "0.0.0.0")
-        );
-        assertThat(counter.get(), is(1));
+        UnderwrapServer server2 = new UnderwrapServer(TestApplication.class);
+        try {
+            AtomicInteger counter = new AtomicInteger(0);
+            server2.start(
+                    Collections.emptyMap(),
+                    null,
+                    handler -> { counter.incrementAndGet(); return handler; },
+                    sb -> sb.addHttpListener(0, "0.0.0.0")
+            );
+            assertThat(counter.get(), is(1));
+        }
+        finally {
+            server2.stop();
+        }
     }
 
     @Test
