@@ -144,7 +144,7 @@ public class UnderwrapServer
         undertow.start();
     }
 
-    public void start(Map<Class<?>, Object> contextMap, DeploymentBuild deploymentBuild, ServerBuild serverBuild)
+    public synchronized void start(Map<Class<?>, Object> contextMap, DeploymentBuild deploymentBuild, ServerBuild serverBuild)
     {
         deploy(contextMap, deploymentBuild);
         buildAndStartServer(serverBuild);
