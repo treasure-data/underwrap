@@ -140,7 +140,7 @@ public class UnderwrapServer
         }
     }
 
-    private HttpHandler buildHandler(final HttpHandler pathHandler)
+    private HttpHandler defaultBuildHandler(final HttpHandler pathHandler)
     {
         return pathHandler;
     }
@@ -160,7 +160,7 @@ public class UnderwrapServer
 
     public void start(Map<Class<?>, Object> contextMap, DeploymentBuild deploymentBuild, ServerBuild serverBuild)
     {
-        start(contextMap, deploymentBuild, this::buildHandler, serverBuild);
+        start(contextMap, deploymentBuild, this::defaultBuildHandler, serverBuild);
     }
 
     public void start(Map<Class<?>, Object> contextMap, DeploymentBuild deploymentBuild, HandlerFunction handlerFunction, ServerBuild serverBuild)
