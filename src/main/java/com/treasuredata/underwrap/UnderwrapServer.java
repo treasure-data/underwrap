@@ -1,6 +1,7 @@
 package com.treasuredata.underwrap;
 
 import io.undertow.Undertow;
+import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.GracefulShutdownHandler;
 import io.undertow.server.handlers.PathHandler;
 import io.undertow.servlet.Servlets;
@@ -39,11 +40,18 @@ public class UnderwrapServer
     private Undertow undertow;
     private DeploymentManager deploymentManager;
     private GracefulShutdownHandler gracefulShutdownHandler;
+    private HttpHandler httpHandler;
 
     @FunctionalInterface
     public interface DeploymentBuild
     {
         void build(DeploymentInfo deploymentInfo);
+    }
+
+    @FunctionalInterface
+    public interface HandlerFunction
+    {
+        HttpHandler process(HttpHandler pathHandler);
     }
 
     @FunctionalInterface
@@ -76,7 +84,7 @@ public class UnderwrapServer
         this.accessLogPath = accessLogPath;
     }
 
-    private void deploy(Map<Class<?>, Object> contextMap, DeploymentBuild deploymentBuild)
+    private void deploy(Map<Class<?>, Object> contextMap, DeploymentBuild deploymentBuild, HandlerFunction handlerFunction)
     {
         // Construct deployment information
         ResteasyDeployment resteasyDeployment = new ResteasyDeployment();
@@ -120,8 +128,9 @@ public class UnderwrapServer
             throw new RuntimeException(e);
         }
 
+        gracefulShutdownHandler = new GracefulShutdownHandler(handlerFunction.process(pathHandler));
         // TODO: Make it enable to set custom format and access log path
-        gracefulShutdownHandler = new GracefulShutdownHandler(new AccessLogHandlerFactory(applicationClass, serverRootPath, accessLogPath, accessLogFormat).create(pathHandler));
+        httpHandler = new AccessLogHandlerFactory(applicationClass, serverRootPath, accessLogPath, accessLogFormat).create(gracefulShutdownHandler);
 
         // Set instances we want to pass via @Context annotation
         if (contextMap != null) {
@@ -129,6 +138,11 @@ public class UnderwrapServer
                 resteasyDeployment.getDispatcher().getDefaultContextObjects().put(contextTuple.getKey(), contextTuple.getValue());
             }
         }
+    }
+
+    private HttpHandler defaultBuildHandler(final HttpHandler pathHandler)
+    {
+        return pathHandler;
     }
 
     private void buildAndStartServer(ServerBuild serverBuild)
@@ -140,13 +154,18 @@ public class UnderwrapServer
             serverBuild.build(serverBuilder);
         }
 
-        undertow = serverBuilder.setHandler(gracefulShutdownHandler).build();
+        undertow = serverBuilder.setHandler(httpHandler).build();
         undertow.start();
     }
 
     public void start(Map<Class<?>, Object> contextMap, DeploymentBuild deploymentBuild, ServerBuild serverBuild)
     {
-        deploy(contextMap, deploymentBuild);
+        start(contextMap, deploymentBuild, this::defaultBuildHandler, serverBuild);
+    }
+
+    public void start(Map<Class<?>, Object> contextMap, DeploymentBuild deploymentBuild, HandlerFunction handlerFunction, ServerBuild serverBuild)
+    {
+        deploy(contextMap, deploymentBuild, handlerFunction);
         buildAndStartServer(serverBuild);
     }
 
