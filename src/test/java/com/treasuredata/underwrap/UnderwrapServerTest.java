@@ -59,16 +59,16 @@ public class UnderwrapServerTest
         }
     }
 
-    private void startServer(Optional<UnderwrapServer.HandlerFunction> handlerFunction)
+    private void startServer(Optional<UnderwrapServer.HandlerBuildFunction> handlerBuildFunction)
     {
-        UnderwrapServer.ServerBuild serverBuild =
+        UnderwrapServer.ServerBuildFunction serverBuildFunction =
                 sb -> sb.addHttpListener(0, "0.0.0.0").setSocketOption(Options.REUSE_ADDRESSES, true);
 
-        if (handlerFunction.isPresent()) {
-            server.start(Collections.emptyMap(), null, handlerFunction.get(), serverBuild);
+        if (handlerBuildFunction.isPresent()) {
+            server.start(Collections.emptyMap(), null, handlerBuildFunction.get(), serverBuildFunction);
         }
         else {
-            server.start(Collections.emptyMap(), null, serverBuild);
+            server.start(Collections.emptyMap(), null, serverBuildFunction);
         }
 
         List<Undertow.ListenerInfo> listenerInfo = server.getListenerInfo();
