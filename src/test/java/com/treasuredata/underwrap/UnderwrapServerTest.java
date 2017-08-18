@@ -15,9 +15,7 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.SocketChannel;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -61,15 +59,17 @@ public class UnderwrapServerTest
         }
     }
 
-    private void startServer(Optional<Runnable> extraOperation)
+    private void startServer(Optional<UnderwrapServer.HandlerFunction> handlerFunction)
     {
-        server.start(
-                Collections.emptyMap(),
-                null,
-                sb -> {
-                    extraOperation.ifPresent(Runnable::run);
-                    sb.addHttpListener(0, "0.0.0.0").setSocketOption(Options.REUSE_ADDRESSES, true);
-                });
+        UnderwrapServer.ServerBuild serverBuild =
+                sb -> sb.addHttpListener(0, "0.0.0.0").setSocketOption(Options.REUSE_ADDRESSES, true);
+
+        if (handlerFunction.isPresent()) {
+            server.start(Collections.emptyMap(), null, handlerFunction.get(), serverBuild);
+        }
+        else {
+            server.start(Collections.emptyMap(), null, serverBuild);
+        }
 
         List<Undertow.ListenerInfo> listenerInfo = server.getListenerInfo();
         assertThat(listenerInfo.size(), is(1));
@@ -109,7 +109,12 @@ public class UnderwrapServerTest
     {
         final AtomicInteger counter = new AtomicInteger(0);
 
-        startServer(Optional.of(counter::incrementAndGet));
+        startServer(
+                Optional.of(
+                        handler -> {
+                            counter.incrementAndGet();
+                            return handler;
+                        }));
 
         assertThat(counter.get(), is(1));
     }
