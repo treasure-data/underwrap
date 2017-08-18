@@ -18,6 +18,7 @@ import javax.ws.rs.core.Response;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -40,14 +41,6 @@ public class UnderwrapServerTest
     public static class TestResource
     {
         @GET
-        @Path("/fast")
-        public void fastResponse()
-                throws InterruptedException
-        {
-            TimeUnit.NANOSECONDS.sleep(1);
-        }
-
-        @GET
         @Path("/slow")
         public void slowResponse()
                 throws InterruptedException
@@ -66,20 +59,29 @@ public class UnderwrapServerTest
         }
     }
 
-    @Before
-    public void setUp()
+    private void startServer(Optional<UnderwrapServer.HandlerFunction> handlerFunction)
     {
-        // Start UnderwrapServer
-        server = new UnderwrapServer(TestApplication.class);
-        server.start(Collections.emptyMap(), null, sb -> sb.addHttpListener(0, "0.0.0.0").setSocketOption(Options.REUSE_ADDRESSES, true));
+        UnderwrapServer.ServerBuild serverBuild =
+                sb -> sb.addHttpListener(0, "0.0.0.0").setSocketOption(Options.REUSE_ADDRESSES, true);
+
+        if (handlerFunction.isPresent()) {
+            server.start(Collections.emptyMap(), null, handlerFunction.get(), serverBuild);
+        }
+        else {
+            server.start(Collections.emptyMap(), null, serverBuild);
+        }
 
         List<Undertow.ListenerInfo> listenerInfo = server.getListenerInfo();
         assertThat(listenerInfo.size(), is(1));
 
         InetSocketAddress address = (InetSocketAddress) listenerInfo.get(0).getAddress();
         serverPort = address.getPort();
+    }
 
-        waitServer();
+    @Before
+    public void setUp()
+    {
+        server = new UnderwrapServer(TestApplication.class);
     }
 
     @After
@@ -87,22 +89,6 @@ public class UnderwrapServerTest
     {
         if (server != null) {
             server.stop();
-        }
-    }
-
-    private void waitServer()
-    {
-        long timeout = System.nanoTime() + 3_000_000_000L;
-        try {
-            while (System.nanoTime() < timeout) {
-                if (getSuccessfulResponse("/fast")) {
-                    break;
-                }
-                TimeUnit.MILLISECONDS.sleep(100);
-            }
-        }
-        catch (InterruptedException e) {
-            e.printStackTrace();
         }
     }
 
@@ -118,40 +104,27 @@ public class UnderwrapServerTest
         return target.request().get();
     }
 
-    private boolean getSuccessfulResponse(String path)
-    {
-        Response res = getHttpResponse(path);
-        return res.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL;
-    }
-
     @Test
     public void buildHandler()
     {
-        UnderwrapServer server2 = new UnderwrapServer(TestApplication.class);
-        try {
-            AtomicInteger counter = new AtomicInteger(0);
-            server2.start(
-                    Collections.emptyMap(),
-                    null,
-                    handler -> {
-                        counter.incrementAndGet();
-                        return handler;
-                    },
-                    sb -> sb
-                        .addHttpListener(0, "0.0.0.0")
-                        .setSocketOption(Options.REUSE_ADDRESSES, true)
-            );
-            assertThat(counter.get(), is(1));
-        }
-        finally {
-            server2.stop();
-        }
+        final AtomicInteger counter = new AtomicInteger(0);
+
+        startServer(
+                Optional.of(
+                        handler -> {
+                            counter.incrementAndGet();
+                            return handler;
+                        }));
+
+        assertThat(counter.get(), is(1));
     }
 
     @Test
     public void gracefulShutdown()
             throws InterruptedException, ExecutionException, TimeoutException
     {
+        startServer(Optional.empty());
+
         // Send a HTTP request and wait for the response in another thread
         ExecutorService executorService = Executors.newCachedThreadPool();
         Future<Response> future = executorService.submit(() -> getHttpResponse("/slow"));
@@ -159,7 +132,7 @@ public class UnderwrapServerTest
         // Wait 1 sec and stop the server
         executorService.execute(() -> {
             try {
-                TimeUnit.SECONDS.sleep(1);
+                TimeUnit.SECONDS.sleep(2);
             }
             catch (InterruptedException e) {
                 e.printStackTrace();
