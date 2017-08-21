@@ -43,21 +43,21 @@ public class UnderwrapServer
     private HttpHandler httpHandler;
 
     @FunctionalInterface
-    public interface DeploymentBuild
+    public interface DeploymentInfoBuildFunction
     {
-        void build(DeploymentInfo deploymentInfo);
+        DeploymentInfo process(DeploymentInfo base);
     }
 
     @FunctionalInterface
-    public interface HandlerFunction
+    public interface HandlerBuildFunction
     {
-        HttpHandler process(HttpHandler pathHandler);
+        HttpHandler process(HttpHandler base);
     }
 
     @FunctionalInterface
-    public interface ServerBuild
+    public interface ServerBuildFunction
     {
-        void build(Undertow.Builder undertowBuilder);
+        Undertow.Builder build(Undertow.Builder base);
     }
 
     public UnderwrapServer(Class<? extends UnderwrapApplication> applicationClass)
@@ -84,7 +84,7 @@ public class UnderwrapServer
         this.accessLogPath = accessLogPath;
     }
 
-    private void deploy(Map<Class<?>, Object> contextMap, DeploymentBuild deploymentBuild, HandlerFunction handlerFunction)
+    private void deploy(Map<Class<?>, Object> contextMap, DeploymentInfoBuildFunction deploymentInfoBuildFunction, HandlerBuildFunction handlerBuildFunction)
     {
         // Construct deployment information
         ResteasyDeployment resteasyDeployment = new ResteasyDeployment();
@@ -98,9 +98,9 @@ public class UnderwrapServer
                                 .addMapping("/*")
             );
 
-        // Delegate a build of DeployInfo to `deploymentBuild`
-        if (deploymentBuild != null) {
-            deploymentBuild.build(di);
+        // Delegate a build of DeployInfo to `deploymentInfoBuildFunction`
+        if (deploymentInfoBuildFunction != null) {
+            di = deploymentInfoBuildFunction.process(di);
         }
 
         // Take care of some mandatory attributes
@@ -128,7 +128,7 @@ public class UnderwrapServer
             throw new RuntimeException(e);
         }
 
-        gracefulShutdownHandler = new GracefulShutdownHandler(handlerFunction.process(pathHandler));
+        gracefulShutdownHandler = new GracefulShutdownHandler(handlerBuildFunction.process(pathHandler));
         // TODO: Make it enable to set custom format and access log path
         httpHandler = new AccessLogHandlerFactory(applicationClass, serverRootPath, accessLogPath, accessLogFormat).create(gracefulShutdownHandler);
 
@@ -145,28 +145,28 @@ public class UnderwrapServer
         return pathHandler;
     }
 
-    private void buildAndStartServer(ServerBuild serverBuild)
+    private void buildAndStartServer(ServerBuildFunction serverBuildFunction)
     {
         // Configure Undertow server and start it with the root handler
         Undertow.Builder serverBuilder = Undertow.builder();
 
-        if (serverBuild != null) {
-            serverBuild.build(serverBuilder);
+        if (serverBuildFunction != null) {
+            serverBuilder = serverBuildFunction.build(serverBuilder);
         }
 
         undertow = serverBuilder.setHandler(httpHandler).build();
         undertow.start();
     }
 
-    public synchronized void start(Map<Class<?>, Object> contextMap, DeploymentBuild deploymentBuild, ServerBuild serverBuild)
+    public synchronized void start(Map<Class<?>, Object> contextMap, DeploymentInfoBuildFunction deploymentInfoBuildFunction, ServerBuildFunction serverBuildFunction)
     {
-        start(contextMap, deploymentBuild, this::defaultBuildHandler, serverBuild);
+        start(contextMap, deploymentInfoBuildFunction, this::defaultBuildHandler, serverBuildFunction);
     }
 
-    public void start(Map<Class<?>, Object> contextMap, DeploymentBuild deploymentBuild, HandlerFunction handlerFunction, ServerBuild serverBuild)
+    public void start(Map<Class<?>, Object> contextMap, DeploymentInfoBuildFunction deploymentInfoBuildFunction, HandlerBuildFunction handlerBuildFunction, ServerBuildFunction serverBuildFunction)
     {
-        deploy(contextMap, deploymentBuild, handlerFunction);
-        buildAndStartServer(serverBuild);
+        deploy(contextMap, deploymentInfoBuildFunction, handlerBuildFunction);
+        buildAndStartServer(serverBuildFunction);
     }
 
     private void shutdownGracefulShutdownHandler()
