@@ -43,7 +43,7 @@ A very thin wrapper of Undertow and Resteasy
     <dependency>
         <groupId>com.treasuredata</groupId>
         <artifactId>underwrap</artifactId>
-        <version>0.1.1-SNAPSHOT</version>
+        <version>0.1.3</version>
     </dependency>
 </dependencies>
 ```
@@ -74,7 +74,7 @@ artifactory {
 }
 
 dependencies {
-    compile 'com.treasuredata:underwrap:0.1.1-SNAPSHOT'
+    compile 'com.treasuredata:underwrap:0.1.3'
 }
 ```
 
