@@ -6,13 +6,3 @@ test:
   override:
     - ./gradlew clean test --info
 
-deployment:
-  master:
-    branch: master
-    commands:
-      - ./gradlew artifactoryPublish --info --stacktrace
-  release:
-    branch: release
-    commands:
-      - ./gradlew artifactoryPublish --info --stacktrace -Prelease=true
-
