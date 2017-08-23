@@ -22,7 +22,8 @@ apply plugin: 'jacoco'
 apply plugin: 'com.github.kt3k.coveralls'
 
 group 'com.treasuredata'
-version = '0.1.4-SNAPSHOT'
+archivesBaseName = 'underwrap'
+version = '0.1.4'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
