@@ -6,44 +6,14 @@ A very thin wrapper of Undertow and Resteasy
 
 ### Maven
 
-#### ~/.m2/settings.xml
-
-```xml
-<settings>
-    <server>
-        <id>treasuredata-releases</id>
-        <username>${env.TD_ARTIFACTORY_USERNAME}</username>
-        <password>${env.TD_ARTIFACTORY_PASSWORD}</password>
-    </server>
-    <server>
-        <id>treasuredata-snapshots</id>
-        <username>${env.TD_ARTIFACTORY_USERNAME}</username>
-        <password>${env.TD_ARTIFACTORY_PASSWORD}</password>
-    </server>
-</settings>
-```
-
 #### pom.xml
 
 ```xml
-<repositories>
-    <repository>
-        <id>treasuredata-releases</id>
-        <name>treasuredata-releases</name>
-        <url>https://treasuredata.artifactoryonline.com/treasuredata/libs-release</url>
-    </repository>
-    <repository>
-        <id>treasuredata-snapshots</id>
-        <name>treasuredata-snapshots</name>
-        <url>https://treasuredata.artifactoryonline.com/treasuredata/libs-snapshot</url>
-    </repository>
-</repositories>
-    
 <dependencies>
     <dependency>
         <groupId>com.treasuredata</groupId>
         <artifactId>underwrap</artifactId>
-        <version>0.1.3</version>
+        <version>0.1.4</version>
     </dependency>
 </dependencies>
 ```
@@ -53,28 +23,8 @@ A very thin wrapper of Undertow and Resteasy
 #### build.gradle
 
 ```groovy
-apply plugin: 'com.jfrog.artifactory'
-
-artifactory {
-    resolve {
-        contextUrl = 'https://treasuredata.artifactoryonline.com/treasuredata'
-        repository {
-            repoKey = 'libs-release'
-            username = "$System.env.TD_ARTIFACTORY_USERNAME"
-            password = "$System.env.TD_ARTIFACTORY_PASSWORD"
-            maven = true
-        }
-        repository {
-            repoKey = 'libs-snapshot'
-            username = "$System.env.TD_ARTIFACTORY_USERNAME"
-            password = "$System.env.TD_ARTIFACTORY_PASSWORD"
-            maven = true
-        }
-    }
-}
-
 dependencies {
-    compile 'com.treasuredata:underwrap:0.1.3'
+    compile 'com.treasuredata:underwrap:0.1.4'
 }
 ```
 
