@@ -4,3 +4,10 @@ jdk:
   - oraclejdk8
 
 dist: trusty # for OpenJDK8 support https://docs.travis-ci.com/user/languages/java/
+
+install:
+  - ./gradlew assemble -x signArchives -x uploadArchives
+
+script:
+  - ./gradlew check --debug --stacktrace --info
+
