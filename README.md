@@ -1,4 +1,5 @@
 # Underwrap
+[<img src="https://travis-ci.org/treasure-data/underwrap.svg?branch=master"/>](https://travis-ci.org/treasure-data/underwrap)
 
 A very thin wrapper of Undertow and Resteasy
 
