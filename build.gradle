@@ -1,7 +1,6 @@
 buildscript {
     repositories {
         mavenCentral()
-        jcenter()
     }
 
     dependencies {
@@ -36,7 +35,6 @@ def deployPassword = project.hasProperty('ossrhPassword') ? ossrhPassword : ''
 
 repositories {
     mavenCentral()
-    jcenter()
 }
 
 task wrapper(type: Wrapper) {
