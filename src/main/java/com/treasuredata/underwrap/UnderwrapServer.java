@@ -14,6 +14,7 @@ import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xnio.XnioWorker;
 
 import javax.servlet.ServletException;
 import javax.ws.rs.core.Application;
@@ -228,6 +229,13 @@ public class UnderwrapServer
         }
 
         undertow.stop();
+    }
+
+    public XnioWorker getXnioWorker()
+    {
+        // to get metrics about threads and pool
+        // https://github.com/xnio/xnio/blob/3.x/api/src/main/java/org/xnio/XnioWorker.java#L889-L923
+        return undertow.getWorker();
     }
 
     public List<Undertow.ListenerInfo> getListenerInfo()
