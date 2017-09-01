@@ -32,7 +32,7 @@ import static io.undertow.servlet.Servlets.servlet;
 public class UnderwrapServer
 {
     private static final Logger LOG = LoggerFactory.getLogger(UnderwrapServer.class);
-    private final Class<? extends Application> applicationClass;
+    private final Class<? extends UnderwrapApplication> applicationClass;
     private final Path serverRootPath;
 
     private String accessLogFormat;
