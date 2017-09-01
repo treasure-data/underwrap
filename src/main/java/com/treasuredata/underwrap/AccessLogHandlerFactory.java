@@ -21,7 +21,7 @@ public class AccessLogHandlerFactory
     private final String logFormat;
     private final Path accessLogPath;
 
-    public AccessLogHandlerFactory(Class applicationClass, Path serverRootPath, Path accessLogPath, String logFormat)
+    public AccessLogHandlerFactory(Class<? extends UnderwrapServer.UnderwrapApplication> applicationClass, Path serverRootPath, Path accessLogPath, String logFormat)
     {
         this.applicationClass = applicationClass;
 
@@ -40,17 +40,17 @@ public class AccessLogHandlerFactory
         this.accessLogPath = accessLogPath;
     }
 
-    public AccessLogHandlerFactory(Class applicationClass, String logFormat)
+    public AccessLogHandlerFactory(Class<? extends UnderwrapServer.UnderwrapApplication> applicationClass, String logFormat)
     {
         this(applicationClass, null, null, logFormat);
     }
 
-    public AccessLogHandlerFactory(Class applicationClass)
+    public AccessLogHandlerFactory(Class<? extends UnderwrapServer.UnderwrapApplication> applicationClass)
     {
         this(applicationClass, null, null, null);
     }
 
-    public AccessLogHandlerFactory(Class applicationClass, Path serverRootPath, Path accessLogPath)
+    public AccessLogHandlerFactory(Class<? extends UnderwrapServer.UnderwrapApplication> applicationClass, Path serverRootPath, Path accessLogPath)
     {
         this(applicationClass, serverRootPath, accessLogPath, null);
     }

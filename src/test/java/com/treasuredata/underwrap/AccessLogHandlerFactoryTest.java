@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 public class AccessLogHandlerFactoryTest
 {
     static class DummyApplication
-        extends Application
+        extends UnderwrapServer.UnderwrapApplication
     {
     }
 

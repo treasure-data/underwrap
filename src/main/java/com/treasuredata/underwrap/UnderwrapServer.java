@@ -32,7 +32,7 @@ import static io.undertow.servlet.Servlets.servlet;
 public class UnderwrapServer
 {
     private static final Logger LOG = LoggerFactory.getLogger(UnderwrapServer.class);
-    private final Class<? extends Application> applicationClass;
+    private final Class<? extends UnderwrapApplication> applicationClass;
     private final Path serverRootPath;
 
     private String accessLogFormat;
@@ -231,10 +231,13 @@ public class UnderwrapServer
         undertow.stop();
     }
 
+    public UnderwrapMetrics getMetrics()
+    {
+        return new UnderwrapMetrics(undertow.getWorker());
+    }
+
     public XnioWorker getXnioWorker()
     {
-        // to get metrics about threads and pool
-        // https://github.com/xnio/xnio/blob/3.x/api/src/main/java/org/xnio/XnioWorker.java#L889-L923
         return undertow.getWorker();
     }
 
