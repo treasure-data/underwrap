@@ -137,6 +137,11 @@ uploadArchives {
                         name 'Mitsunori Komatsu'
                         email 'komamitsu@gmail.com'
                     }
+                    developer {
+                        id 'tagomoris'
+                        name 'Satoshi Tagomori'
+                        email 'tagomoris@gmail.com'
+                    }
                 }
             }
         }
