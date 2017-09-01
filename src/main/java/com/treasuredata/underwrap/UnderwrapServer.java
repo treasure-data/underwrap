@@ -231,10 +231,13 @@ public class UnderwrapServer
         undertow.stop();
     }
 
+    public UnderwrapMetrics getMetrics()
+    {
+        return new UnderwrapMetrics(undertow.getWorker());
+    }
+
     public XnioWorker getXnioWorker()
     {
-        // to get metrics about threads and pool
-        // https://github.com/xnio/xnio/blob/3.x/api/src/main/java/org/xnio/XnioWorker.java#L889-L923
         return undertow.getWorker();
     }
 

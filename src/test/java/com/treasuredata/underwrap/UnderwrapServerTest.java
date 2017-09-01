@@ -28,11 +28,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.*;
 
 public class UnderwrapServerTest
 {
+    private static final int WORKER_THREADS_IN_TEST = 4;
+
     private int serverPort;
     private UnderwrapServer server;
 
@@ -61,8 +65,12 @@ public class UnderwrapServerTest
 
     private void startServer(Optional<UnderwrapServer.HandlerBuildFunction> handlerBuildFunction)
     {
-        UnderwrapServer.ServerBuildFunction serverBuildFunction =
-                sb -> sb.addHttpListener(0, "0.0.0.0").setSocketOption(Options.REUSE_ADDRESSES, true);
+        UnderwrapServer.ServerBuildFunction serverBuildFunction = (sb) -> {
+            return sb
+            .addHttpListener(0, "0.0.0.0")
+            .setWorkerThreads(WORKER_THREADS_IN_TEST)
+            .setSocketOption(Options.REUSE_ADDRESSES, true);
+        };
 
         if (handlerBuildFunction.isPresent()) {
             server.start(Collections.emptyMap(), null, handlerBuildFunction.get(), serverBuildFunction);
@@ -147,5 +155,18 @@ public class UnderwrapServerTest
         finally {
             executorService.shutdownNow();
         }
+    }
+
+    @Test
+    public void getMetrics()
+    {
+        startServer(Optional.empty());
+
+        UnderwrapMetrics m = server.getMetrics();
+        assertThat(m, is(instanceOf(UnderwrapMetrics.class)));
+        assertThat(m.getCoreWorkerPoolSize(), is(WORKER_THREADS_IN_TEST));
+        assertThat(m.getMaxWorkerPoolSize(), is(WORKER_THREADS_IN_TEST));
+        assertThat(m.getBusyWorkerThreadCount(), is(lessThan(WORKER_THREADS_IN_TEST)));
+        assertThat(m.getWorkerQueueSize(), is(lessThan(WORKER_THREADS_IN_TEST)));
     }
 }
