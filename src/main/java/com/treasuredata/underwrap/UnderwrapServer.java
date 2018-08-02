@@ -35,6 +35,7 @@ public class UnderwrapServer
     private final Class<? extends UnderwrapApplication> applicationClass;
     private final Path serverRootPath;
 
+    private boolean accessLogEnabled;
     private String accessLogFormat;
     private Path accessLogPath;
 
@@ -73,6 +74,11 @@ public class UnderwrapServer
             serverRootPath = Paths.get(System.getProperty("user.dir"));
         }
         this.serverRootPath = serverRootPath;
+    }
+
+    public void setAccessLogEnabled(boolean value)
+    {
+        this.accessLogEnabled = value;
     }
 
     public void setAccessLogFormat(String accessLogFormat)
@@ -130,8 +136,14 @@ public class UnderwrapServer
         }
 
         gracefulShutdownHandler = new GracefulShutdownHandler(handlerBuildFunction.process(pathHandler));
-        // TODO: Make it enable to set custom format and access log path
-        httpHandler = new AccessLogHandlerFactory(applicationClass, serverRootPath, accessLogPath, accessLogFormat).create(gracefulShutdownHandler);
+
+        if (accessLogEnabled) {
+            // TODO: Make it enable to set custom format and access log path
+            httpHandler = new AccessLogHandlerFactory(applicationClass, serverRootPath, accessLogPath, accessLogFormat).create(gracefulShutdownHandler);
+        }
+        else {
+            httpHandler = gracefulShutdownHandler;
+        }
 
         // Set instances we want to pass via @Context annotation
         if (contextMap != null) {
