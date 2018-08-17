@@ -77,4 +77,17 @@ public class UnderwrapMetrics
         }
         // TODO: use `worker.getMXBean().getWorkerQueueSize()` when Xnio 3.5 or later available
     }
+
+    public int getWorkerQueueCapacity()
+    {
+        // return taskQueue.remainingCapacity();
+        try {
+            Field field = XnioWorker.class.getDeclaredField("taskQueue");
+            field.setAccessible(true);
+            return ((BlockingQueue) field.get(worker)).remainingCapacity();
+        }
+        catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException("BUG: incompatible accesse", e);
+        }
+    }
 }
